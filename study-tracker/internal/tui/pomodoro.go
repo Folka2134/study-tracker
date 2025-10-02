@@ -40,6 +40,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			elapsed := time.Since(m.startTime)
 			storage.SaveSession(m.task, elapsed)
 			notification.Send("Timer Done!", fmt.Sprintf("Your timer for %s finished with %.f minutes left", m.task, m.duration.Minutes()-elapsed.Abs().Minutes()))
+			notification.PlaySound()
 			return m, tea.Quit
 		}
 	case tickMsg:
@@ -47,6 +48,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			elapsed := time.Since(m.startTime)
 			storage.SaveSession(m.task, elapsed)
 			notification.Send("Timer Done!", fmt.Sprintf("Your %.f minutes for %s are up", m.duration.Minutes(), m.task))
+			notification.PlaySound()
 			return m, tea.Quit
 		}
 		m.remaining -= time.Second
