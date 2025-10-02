@@ -22,13 +22,13 @@ type model struct {
 	quitting  bool
 }
 
-func NewModel(duration time.Duration, task string, color string, isBreak bool) model {
+func NewModel(duration time.Duration, task string, color1 string, color2 string, isBreak bool) model {
 	return model{
 		duration:  duration,
 		task:      task,
 		remaining: duration,
 		startTime: time.Now(),
-		progress:  progress.New(progress.WithSolidFill(color)),
+		progress:  progress.New(progress.WithGradient(color1, color2)),
 		isBreak:   isBreak,
 	}
 }
@@ -98,8 +98,8 @@ func tickCmd() tea.Cmd {
 	})
 }
 
-func Start(duration time.Duration, task string, w io.Writer, color string, isBreak bool) {
-	p := tea.NewProgram(NewModel(duration, task, color, isBreak), tea.WithOutput(w))
+func Start(duration time.Duration, task string, w io.Writer, color1 string, color2 string, isBreak bool) {
+	p := tea.NewProgram(NewModel(duration, task, color1, color2, isBreak), tea.WithOutput(w))
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

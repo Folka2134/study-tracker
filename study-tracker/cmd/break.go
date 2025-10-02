@@ -11,8 +11,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var breakColor string
-
 // breakCmd represents the break command
 var breakCmd = &cobra.Command{
 	Use:   "break [duration]",
@@ -26,11 +24,12 @@ var breakCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		notification.Send("Break Started!", fmt.Sprintf("Starting a %d minute break.", duration))
-		tui.Start(time.Duration(duration)*time.Minute, "break", os.Stdout, breakColor, true)
+		tui.Start(time.Duration(duration)*time.Minute, "break", os.Stdout, "#074BF5", "#07F5B9", true)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(breakCmd)
-	breakCmd.Flags().StringVar(&breakColor, "color", "#00FF00", "Sets the color of the progress bar")
+	// breakCmd.Flags().StringVar(&breakColor, "color", "#00FF00", "Sets the color of the progress bar")
 }
+
