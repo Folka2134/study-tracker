@@ -9,6 +9,8 @@ import (
 	"github.com/folka2134/study-tracker/study-tracker/internal/notification"
 	"github.com/folka2134/study-tracker/study-tracker/internal/tui"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // startCmd represents the start command
@@ -23,7 +25,8 @@ var startCmd = &cobra.Command{
 			fmt.Println("Error: duration must be an integer.")
 			os.Exit(1)
 		}
-		task := args[1]
+		task := cases.Title(language.English).String(args[1])
+
 		notification.Send("Timer Started!", fmt.Sprintf("Starting a %d minute timer for %s.", duration, task))
 		tui.Start(time.Duration(duration)*time.Minute, task, os.Stdout)
 	},

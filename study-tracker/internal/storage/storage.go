@@ -3,7 +3,6 @@ package storage
 import (
 	"encoding/csv"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -32,7 +31,7 @@ func SaveSession(task string, elapsed time.Duration) error {
 
 	row := []string{
 		time.Now().Format(time.RFC3339),
-		strings.Title(task),
+		task,
 		elapsed.Round(time.Second).String(),
 	}
 
