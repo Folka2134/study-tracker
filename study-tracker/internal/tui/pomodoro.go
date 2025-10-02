@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/charmbracelet/bubbles/progress"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/folka2134/study-tracker/study-tracker/internal/notification"
 	"github.com/folka2134/study-tracker/study-tracker/internal/storage"
@@ -16,6 +17,7 @@ type model struct {
 	task      string
 	remaining time.Duration
 	startTime time.Time
+	progress  progress.Model
 	quitting  bool
 }
 
@@ -25,6 +27,7 @@ func NewModel(duration time.Duration, task string) model {
 		task:      task,
 		remaining: duration,
 		startTime: time.Now(),
+		progress:  progress.New(progress.WithDefaultGradient()),
 	}
 }
 
@@ -34,6 +37,12 @@ func (m model) Init() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.progress.Width = msg.Width - 4
+		if m.progress.Width > 80 {
+			m.progress.Width = 80
+		}
+		return m, nil
 	case tea.KeyMsg:
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			m.quitting = true
@@ -52,7 +61,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		m.remaining -= time.Second
-		return m, tickCmd()
+		cmd := m.progress.SetPercent(float64(m.duration-m.remaining) / float64(m.duration))
+		// cmd := m.duration.Minutes()
+		return m, tea.Batch(tickCmd(), cmd)
+	case progress.FrameMsg:
+		progressModel, cmd := m.progress.Update(msg)
+		m.progress = progressModel.(progress.Model)
+		return m, cmd
 	default:
 		return m, nil
 	}
@@ -63,7 +78,7 @@ func (m model) View() string {
 	if m.quitting {
 		return ""
 	}
-	return fmt.Sprintf("\n  Timer for '%s' | Remaining: %s\n\n  (q to quit)\n", m.task, m.remaining.String())
+	return fmt.Sprintf("\n  Timer for '%s' | Remaining: %s\n\n%s\n\n  (q to quit)\n", m.task, m.remaining.String(), m.progress.View())
 }
 
 type tickMsg time.Time
