@@ -27,7 +27,7 @@ func NewModel(duration time.Duration, task string) model {
 		task:      task,
 		remaining: duration,
 		startTime: time.Now(),
-		progress:  progress.New(progress.WithDefaultGradient()),
+		progress:  progress.New(progress.WithGradient("#3005F2", "#7256F2")),
 	}
 }
 
@@ -62,7 +62,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.remaining -= time.Second
 		cmd := m.progress.SetPercent(float64(m.duration-m.remaining) / float64(m.duration))
-		// cmd := m.duration.Minutes()
 		return m, tea.Batch(tickCmd(), cmd)
 	case progress.FrameMsg:
 		progressModel, cmd := m.progress.Update(msg)
