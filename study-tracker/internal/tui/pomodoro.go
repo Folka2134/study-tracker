@@ -18,18 +18,22 @@ type model struct {
 	remaining time.Duration
 	startTime time.Time
 	progress  progress.Model
+	isBreak   bool
 	quitting  bool
 }
 
-func NewModel(duration time.Duration, task string) model {
+func NewModel(duration time.Duration, task string, color string, isBreak bool) model {
 	return model{
 		duration:  duration,
 		task:      task,
 		remaining: duration,
 		startTime: time.Now(),
-		progress:  progress.New(progress.WithGradient("#3005F2", "#7256F2")),
+		progress:  progress.New(progress.WithSolidFill(color)),
+		isBreak:   isBreak,
 	}
 }
+
+// progress:  progress.New(progress.WithGradient("#3005F2", "#7256F2")),
 
 func (m model) Init() tea.Cmd {
 	return tickCmd()
@@ -46,16 +50,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			m.quitting = true
-			elapsed := time.Since(m.startTime)
-			storage.SaveSession(m.task, elapsed)
-			notification.Send("Timer Done!", fmt.Sprintf("Your timer for %s finished with %.f minutes left", m.task, m.duration.Minutes()-elapsed.Abs().Minutes()))
+			if !m.isBreak {
+				elapsed := time.Since(m.startTime)
+				storage.SaveSession(m.task, elapsed)
+				notification.Send("Timer Done!", fmt.Sprintf("Your timer for %s finished with %.f minutes left", m.task, m.duration.Minutes()-elapsed.Abs().Minutes()))
+			} else {
+				notification.Send("Break ended!", "")
+			}
 			notification.PlaySound()
 			return m, tea.Quit
 		}
 	case tickMsg:
 		if m.remaining <= 0 {
-			elapsed := time.Since(m.startTime)
-			storage.SaveSession(m.task, elapsed)
+			if !m.isBreak {
+				elapsed := time.Since(m.startTime)
+				storage.SaveSession(m.task, elapsed)
+			}
 			notification.Send("Timer Done!", fmt.Sprintf("Your %.f minutes for %s are up", m.duration.Minutes(), m.task))
 			notification.PlaySound()
 			return m, tea.Quit
@@ -88,10 +98,11 @@ func tickCmd() tea.Cmd {
 	})
 }
 
-func Start(duration time.Duration, task string, w io.Writer) {
-	p := tea.NewProgram(NewModel(duration, task), tea.WithOutput(w))
+func Start(duration time.Duration, task string, w io.Writer, color string, isBreak bool) {
+	p := tea.NewProgram(NewModel(duration, task, color, isBreak), tea.WithOutput(w))
 	if _, err := p.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
+

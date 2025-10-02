@@ -13,6 +13,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+var color string
+
 // startCmd represents the start command
 var startCmd = &cobra.Command{
 	Use:   "start [duration] [task]",
@@ -28,10 +30,11 @@ var startCmd = &cobra.Command{
 		task := cases.Title(language.English).String(args[1])
 
 		notification.Send("Timer Started!", fmt.Sprintf("Starting a %d minute timer for %s.", duration, task))
-		tui.Start(time.Duration(duration)*time.Minute, task, os.Stdout)
+		tui.Start(time.Duration(duration)*time.Minute, task, os.Stdout, color, false)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(startCmd)
+	startCmd.Flags().StringVar(&color, "color", "#FF79C6", "Sets the color of the progress bar")
 }
