@@ -13,23 +13,28 @@ import (
 )
 
 type model struct {
-	duration  time.Duration
-	task      string
-	remaining time.Duration
-	startTime time.Time
-	progress  progress.Model
-	isBreak   bool
-	quitting  bool
+	duration       time.Duration
+	task           string
+	remaining      time.Duration
+	startTime      time.Time
+	progress       progress.Model
+	isBreak        bool
+	quitting       bool
+	paused         bool
+	pausedDuration time.Duration
+	pauseStartTime time.Time
 }
 
 func NewModel(duration time.Duration, task string, color1 string, color2 string, isBreak bool) model {
 	return model{
-		duration:  duration,
-		task:      task,
-		remaining: duration,
-		startTime: time.Now(),
-		progress:  progress.New(progress.WithGradient(color1, color2)),
-		isBreak:   isBreak,
+		duration:       duration,
+		task:           task,
+		remaining:      duration,
+		startTime:      time.Now(),
+		progress:       progress.New(progress.WithGradient(color1, color2)),
+		isBreak:        isBreak,
+		paused:         false,
+		pausedDuration: 0,
 	}
 }
 
@@ -50,8 +55,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		if msg.String() == "q" || msg.String() == "ctrl+c" {
 			m.quitting = true
+			if m.paused {
+				m.pausedDuration += time.Since(m.pauseStartTime)
+			}
 			if !m.isBreak {
-				elapsed := time.Since(m.startTime)
+				elapsed := time.Since(m.startTime) - m.pausedDuration
 				storage.SaveSession(m.task, elapsed)
 				notification.Send("Timer Done!", fmt.Sprintf("Your timer for %s finished with %.f minutes left", m.task, m.duration.Minutes()-elapsed.Abs().Minutes()))
 			} else {
@@ -60,7 +68,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			notification.PlaySound()
 			return m, tea.Quit
 		}
+		if msg.String() == "p" {
+			m.paused = !m.paused
+			if m.paused {
+				m.pauseStartTime = time.Now()
+			} else {
+				m.pausedDuration += time.Since(m.pauseStartTime)
+			}
+		}
 	case tickMsg:
+		if m.paused {
+			return m, tickCmd()
+		}
 		if m.remaining <= 0 {
 			if !m.isBreak {
 				elapsed := time.Since(m.startTime)
@@ -87,7 +106,11 @@ func (m model) View() string {
 	if m.quitting {
 		return ""
 	}
-	return fmt.Sprintf("\n  Timer for '%s' | Remaining: %s\n\n%s\n\n  (q to quit)\n", m.task, m.remaining.String(), m.progress.View())
+	paused := ""
+	if m.paused {
+		paused = "| PAUSED"
+	}
+	return fmt.Sprintf("\n  Timer for '%s' | Remaining: %s %s\n\n%s\n\n  (q to quit, p to pause)\n", m.task, m.remaining.String(), paused, m.progress.View())
 }
 
 type tickMsg time.Time
@@ -105,4 +128,3 @@ func Start(duration time.Duration, task string, w io.Writer, color1 string, colo
 		os.Exit(1)
 	}
 }
-
