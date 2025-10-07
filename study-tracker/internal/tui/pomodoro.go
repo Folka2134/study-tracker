@@ -31,7 +31,7 @@ func NewModel(duration time.Duration, task string, color1 string, color2 string,
 		task:           task,
 		remaining:      duration,
 		startTime:      time.Now(),
-		progress:       progress.New(progress.WithGradient(color1, color2)),
+		progress:       progress.New(progress.WithGradient(color1, color2), progress.WithoutPercentage()),
 		isBreak:        isBreak,
 		paused:         false,
 		pausedDuration: 0,
@@ -110,7 +110,7 @@ func (m model) View() string {
 	if m.paused {
 		paused = "| PAUSED"
 	}
-	return fmt.Sprintf("\n  Timer for '%s' | Remaining: %s %s\n\n%s\n\n  (q to quit, p to pause)\n", m.task, m.remaining.String(), paused, m.progress.View())
+	return fmt.Sprintf("\n   Timer for '%s' | Remaining: %s %s\n\n %s\n\n   (q to quit, p to pause)\n", m.task, m.remaining.String(), paused, m.progress.View())
 }
 
 type tickMsg time.Time
